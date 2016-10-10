@@ -6,16 +6,15 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 /**
  * Sample token completion view for basic contact info
- *
+ * <p>
  * Created on 9/12/13.
+ *
  * @author mgod
  */
-public class ContactsCompletionView extends TokenCompleteTextView<Person> {
+public class ContactsCompletionView extends TokenCompleteTextView<InputModel> {
 
     public ContactsCompletionView(Context context) {
         super(context);
@@ -30,21 +29,15 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
     }
 
     @Override
-    protected View getViewForObject(Person person) {
-        LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+    protected View getViewForObject(InputModel inputModel) {
+        LayoutInflater l = (LayoutInflater) getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
         TokenTextView token = (TokenTextView) l.inflate(R.layout.contact_token, (ViewGroup) getParent(), false);
-        token.setText(person.getEmail());
+        token.setText(inputModel.getFormattedInput());
         return token;
     }
 
     @Override
-    protected Person defaultObject(String completionText) {
-        //Stupid simple example of guessing if we have an email or not
-        int index = completionText.indexOf('@');
-        if (index == -1) {
-            return new Person(completionText, completionText.replace(" ", "") + "@example.com");
-        } else {
-            return new Person(completionText.substring(0, index), completionText);
-        }
+    protected InputModel defaultObject(String completionText) {
+        return new InputModel(completionText, completionText);
     }
 }

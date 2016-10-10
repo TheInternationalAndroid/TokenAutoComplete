@@ -6,7 +6,6 @@ import android.content.res.ColorStateList;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Build;
-import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.text.Editable;
@@ -52,9 +51,15 @@ import java.util.List;
  *
  * @author mgod
  */
-public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
+public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener, TextWatcher, SpanWatcher {
     //Logging
     public static final String TAG = "TokenAutoComplete";
+
+    public interface TokenListener<T> {
+        void onTokenAdded(T token);
+
+        void onTokenRemoved(T token);
+    }
 
     //When the token is deleted...
     public enum TokenDeleteStyle {
@@ -82,16 +87,19 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
     }
 
-    private char[] splitChar = {',', ';'};
+    private char[] splitChar = {' ', ',', ';'};
     private Tokenizer tokenizer;
     private T selectedObject;
     private TokenListener<T> listener;
-    private TokenSpanWatcher spanWatcher;
-    private TokenTextWatcher textWatcher;
     private ArrayList<T> objects;
     private List<TokenCompleteTextView<T>.TokenImageSpan> hiddenSpans;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
+    /**
+     * deletes tokens if you delete the space in front of them
+     * without this, you get the auto-complete dropdown a character early
+     */
+    private ArrayList<TokenImageSpan> spansToRemove = new ArrayList<>();
     private CharSequence prefix = "";
     private boolean hintVisible = false;
     private Layout lastLayout = null;
@@ -105,28 +113,43 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     private int tokenLimit = -1;
 
+    public TokenCompleteTextView(Context context) {
+        super(context);
+        init();
+    }
+
+    public TokenCompleteTextView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init();
+    }
+
+    public TokenCompleteTextView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        init();
+    }
+
     /**
      * Add the TextChangedListeners
      */
-    protected void addListeners() {
+    private void addListeners() {
         Editable text = getText();
         if (text != null) {
-            text.setSpan(spanWatcher, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-            addTextChangedListener(textWatcher);
+            text.setSpan(this, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+            addTextChangedListener(this);
         }
     }
 
     /**
      * Remove the TextChangedListeners
      */
-    protected void removeListeners() {
+    private void removeListeners() {
         Editable text = getText();
         if (text != null) {
-            TokenSpanWatcher[] spanWatchers = text.getSpans(0, text.length(), TokenSpanWatcher.class);
-            for (TokenSpanWatcher watcher : spanWatchers) {
+            SpanWatcher[] spanWatchers = text.getSpans(0, text.length(), SpanWatcher.class);
+            for (SpanWatcher watcher : spanWatchers) {
                 text.removeSpan(watcher);
             }
-            removeTextChangedListener(textWatcher);
+            removeTextChangedListener(this);
         }
     }
 
@@ -141,8 +164,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         objects = new ArrayList<>();
         Editable text = getText();
         assert null != text;
-        spanWatcher = new TokenSpanWatcher();
-        textWatcher = new TokenTextWatcher();
         hiddenSpans = new ArrayList<>();
 
         // Initialise TextChangedListeners
@@ -197,21 +218,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         initialized = true;
     }
 
-    public TokenCompleteTextView(Context context) {
-        super(context);
-        init();
-    }
-
-    public TokenCompleteTextView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
-    }
-
-    public TokenCompleteTextView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-        init();
-    }
-
     @Override
     protected void performFiltering(@NonNull CharSequence text, int start, int end,
                                     int keyCode) {
@@ -227,7 +233,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             }
         }
     }
-
 
     @Override
     public void setTokenizer(Tokenizer t) {
@@ -265,6 +270,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     /**
      * Override if you want to prevent a token from being removed. Defaults to true.
+     *
      * @param token the token to check
      * @return false if the token should not be removed, true if it's ok to remove it.
      */
@@ -404,8 +410,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     /**
      * Correctly build accessibility string for token contents
-     *
+     * <p>
      * This seems to be a hidden API, but there doesn't seem to be another reasonable way
+     *
      * @return custom string for accessibility
      */
     @SuppressWarnings("unused")
@@ -805,10 +812,10 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                     }, 10);
                 }
 
-                TokenSpanWatcher[] watchers = getText().getSpans(0, getText().length(), TokenSpanWatcher.class);
+                SpanWatcher[] watchers = getText().getSpans(0, getText().length(), SpanWatcher.class);
                 if (watchers.length == 0) {
                     //Someone removes watchers? I'm pretty sure this isn't in this code... -mgod
-                    text.setSpan(spanWatcher, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+                    text.setSpan(this, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 }
             }
         }
@@ -965,7 +972,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 for (TokenImageSpan span : toRemove) {
                     hiddenSpans.remove(span);
                     // Remove it from the state and fire the callback
-                    spanWatcher.onSpanRemoved(text, span, 0, 0);
+                    onSpanRemoved(text, span, 0, 0);
                 }
 
                 updateCountSpan();
@@ -1011,9 +1018,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         if (text == null) return;
 
         //If the spanwatcher has been removed, we need to also manually trigger onSpanRemoved
-        TokenSpanWatcher[] spans = text.getSpans(0, text.length(), TokenSpanWatcher.class);
+        SpanWatcher[] spans = text.getSpans(0, text.length(), SpanWatcher.class);
         if (spans.length == 0) {
-            spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
+            onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
         }
 
         //Add 1 to the end because we put a " " at the end of the spans when adding them
@@ -1062,12 +1069,12 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             //In some cases, particularly the 1 to nth objects when not focused and restoring
             //onSpanAdded doesn't get called
             if (!objects.contains(object)) {
-                spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
+                onSpanAdded(editable, tokenSpan, 0, 0);
             }
         } else {
             hiddenSpans.add(tokenSpan);
             //Need to manually call onSpanAdded here as we're not putting the span on the text
-            spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
+            onSpanAdded(editable, tokenSpan, 0, 0);
             updateCountSpan();
         }
     }
@@ -1109,7 +1116,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                     removeSpan(span);
 
                     // Make sure the callback gets called
-                    spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
+                    onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
                 }
             }
         });
@@ -1228,112 +1235,97 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
     }
 
-    public interface TokenListener<T> {
-        void onTokenAdded(T token);
+    @SuppressWarnings("unchecked cast")
+    @Override
+    public void onSpanAdded(Spannable text, Object what, int start, int end) {
+        if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
+            TokenImageSpan token = (TokenImageSpan) what;
+            objects.add(token.getToken());
 
-        void onTokenRemoved(T token);
-    }
-
-    private class TokenSpanWatcher implements SpanWatcher {
-
-        @SuppressWarnings("unchecked cast")
-        @Override
-        public void onSpanAdded(Spannable text, Object what, int start, int end) {
-            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
-                TokenImageSpan token = (TokenImageSpan) what;
-                objects.add(token.getToken());
-
-                if (listener != null)
-                    listener.onTokenAdded(token.getToken());
-            }
-        }
-
-        @SuppressWarnings("unchecked cast")
-        @Override
-        public void onSpanRemoved(Spannable text, Object what, int start, int end) {
-            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
-                TokenImageSpan token = (TokenImageSpan) what;
-                if (objects.contains(token.getToken())) {
-                    objects.remove(token.getToken());
-                }
-
-                if (listener != null)
-                    listener.onTokenRemoved(token.getToken());
-            }
-        }
-
-        @Override
-        public void onSpanChanged(Spannable text, Object what, int ostart, int oend, int nstart, int nend) {
+            if (listener != null)
+                listener.onTokenAdded(token.getToken());
         }
     }
 
-    /**
-     * deletes tokens if you delete the space in front of them
-     * without this, you get the auto-complete dropdown a character early
-     */
-    private class TokenTextWatcher implements TextWatcher {
-        ArrayList<TokenImageSpan> spansToRemove = new ArrayList<>();
+    @SuppressWarnings("unchecked cast")
+    @Override
+    public void onSpanRemoved(Spannable text, Object what, int start, int end) {
+        if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
+            TokenImageSpan token = (TokenImageSpan) what;
+            if (objects.contains(token.getToken())) {
+                objects.remove(token.getToken());
+            }
 
-        protected void removeToken(TokenImageSpan token, Editable text) {
-            text.removeSpan(token);
+            if (listener != null)
+                listener.onTokenRemoved(token.getToken());
         }
+    }
 
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            // count > 0 means something will be deleted
-            if (count > 0 && getText() != null) {
-                Editable text = getText();
-                int end = start + count;
+    @Override
+    public void onSpanChanged(Spannable text, Object what, int ostart, int oend, int nstart, int nend) {
+    }
 
-                //If we're deleting a space, we want spans from 1 character before this start
-                if (text.charAt(start) == ' ') {
-                    start -= 1;
+    protected void removeToken(TokenImageSpan token, Editable text) {
+        text.removeSpan(token);
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        // count > 0 means something will be deleted
+        if (getText() == null)
+            return;
+        Editable text = getText();
+        int end = start + count;
+        if (count > 0) {
+
+            //If we're deleting a space, we want spans from 1 character before this start
+            if (text.charAt(start) == ' ') {
+                start -= 1;
+            }
+
+            TokenImageSpan[] spans = text.getSpans(start, end, TokenImageSpan.class);
+
+            //NOTE: I'm not completely sure this won't cause problems if we get stuck in a text changed loop
+            //but it appears to work fine. Spans will stop getting removed if this breaks.
+            ArrayList<TokenImageSpan> spansToRemove = new ArrayList<>();
+            for (TokenImageSpan token : spans) {
+                if (text.getSpanStart(token) < end && start < text.getSpanEnd(token)) {
+                    spansToRemove.add(token);
                 }
+            }
+            this.spansToRemove = spansToRemove;
+        }
+    }
 
-                TokenImageSpan[] spans = text.getSpans(start, end, TokenImageSpan.class);
+    @Override
+    public void afterTextChanged(Editable text) {
+        ArrayList<TokenImageSpan> spansCopy = new ArrayList<>(spansToRemove);
+        spansToRemove.clear();
+        for (TokenImageSpan token : spansCopy) {
+            int spanStart = text.getSpanStart(token);
+            int spanEnd = text.getSpanEnd(token);
 
-                //NOTE: I'm not completely sure this won't cause problems if we get stuck in a text changed loop
-                //but it appears to work fine. Spans will stop getting removed if this breaks.
-                ArrayList<TokenImageSpan> spansToRemove = new ArrayList<>();
-                for (TokenImageSpan token : spans) {
-                    if (text.getSpanStart(token) < end && start < text.getSpanEnd(token)) {
-                        spansToRemove.add(token);
-                    }
-                }
-                this.spansToRemove = spansToRemove;
+            removeToken(token, text);
+
+            //The end of the span is the character index after it
+            spanEnd--;
+
+            //Delete any extra split chars
+            if (spanEnd >= 0 && isSplitChar(text.charAt(spanEnd))) {
+                text.delete(spanEnd, spanEnd + 1);
+            }
+
+            if (spanStart >= 0 && isSplitChar(text.charAt(spanStart))) {
+                text.delete(spanStart, spanStart + 1);
             }
         }
 
-        @Override
-        public void afterTextChanged(Editable text) {
-            ArrayList<TokenImageSpan> spansCopy = new ArrayList<>(spansToRemove);
-            spansToRemove.clear();
-            for (TokenImageSpan token : spansCopy) {
-                int spanStart = text.getSpanStart(token);
-                int spanEnd = text.getSpanEnd(token);
+        clearSelections();
+        updateHint();
+    }
 
-                removeToken(token, text);
-
-                //The end of the span is the character index after it
-                spanEnd--;
-
-                //Delete any extra split chars
-                if (spanEnd >= 0 && isSplitChar(text.charAt(spanEnd))) {
-                    text.delete(spanEnd, spanEnd + 1);
-                }
-
-                if (spanStart >= 0 && isSplitChar(text.charAt(spanStart))) {
-                    text.delete(spanStart, spanStart + 1);
-                }
-            }
-
-            clearSelections();
-            updateHint();
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-        }
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
     }
 
     protected ArrayList<Serializable> getSerializableObjects() {
@@ -1372,7 +1364,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         savingState = true;
         Parcelable superState = super.onSaveInstanceState();
         savingState = false;
-        SavedState state = new SavedState(superState);
+        com.tokenautocomplete.SavedState state = new com.tokenautocomplete.SavedState(superState);
 
         state.prefix = prefix;
         state.allowCollapse = allowCollapse;
@@ -1396,12 +1388,12 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     @Override
     public void onRestoreInstanceState(Parcelable state) {
-        if (!(state instanceof SavedState)) {
+        if (!(state instanceof com.tokenautocomplete.SavedState)) {
             super.onRestoreInstanceState(state);
             return;
         }
 
-        SavedState ss = (SavedState) state;
+        com.tokenautocomplete.SavedState ss = (com.tokenautocomplete.SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
 
         setText(ss.prefix);
@@ -1432,71 +1424,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     /**
-     * Handle saving the token state
-     */
-    private static class SavedState extends BaseSavedState {
-        CharSequence prefix;
-        boolean allowCollapse;
-        boolean allowDuplicates;
-        boolean performBestGuess;
-        TokenClickStyle tokenClickStyle;
-        TokenDeleteStyle tokenDeleteStyle;
-        ArrayList<Serializable> baseObjects;
-        char[] splitChar;
-
-        @SuppressWarnings("unchecked")
-        SavedState(Parcel in) {
-            super(in);
-            prefix = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
-            allowCollapse = in.readInt() != 0;
-            allowDuplicates = in.readInt() != 0;
-            performBestGuess = in.readInt() != 0;
-            tokenClickStyle = TokenClickStyle.values()[in.readInt()];
-            tokenDeleteStyle = TokenDeleteStyle.values()[in.readInt()];
-            baseObjects = (ArrayList<Serializable>) in.readSerializable();
-            splitChar = in.createCharArray();
-        }
-
-        SavedState(Parcelable superState) {
-            super(superState);
-        }
-
-        @Override
-        public void writeToParcel(@NonNull Parcel out, int flags) {
-            super.writeToParcel(out, flags);
-            TextUtils.writeToParcel(prefix, out, 0);
-            out.writeInt(allowCollapse ? 1 : 0);
-            out.writeInt(allowDuplicates ? 1 : 0);
-            out.writeInt(performBestGuess ? 1 : 0);
-            out.writeInt(tokenClickStyle.ordinal());
-            out.writeInt(tokenDeleteStyle.ordinal());
-            out.writeSerializable(baseObjects);
-            out.writeCharArray(splitChar);
-        }
-
-        @Override
-        public String toString() {
-            String str = "TokenCompleteTextView.SavedState{"
-                    + Integer.toHexString(System.identityHashCode(this))
-                    + " tokens=" + baseObjects;
-            return str + "}";
-        }
-
-        @SuppressWarnings("hiding")
-        public static final Parcelable.Creator<SavedState> CREATOR
-                = new Parcelable.Creator<SavedState>() {
-            public SavedState createFromParcel(Parcel in) {
-                return new SavedState(in);
-            }
-
-            public SavedState[] newArray(int size) {
-                return new SavedState[size];
-            }
-        };
-    }
-
-    /**
      * Checks if selection can be deleted. This method is called from TokenInputConnection .
+     *
      * @param beforeLength the number of characters before the current selection end to check
      * @return true if there are no non-deletable pieces of the section
      */
@@ -1541,8 +1470,13 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     private class TokenInputConnection extends InputConnectionWrapper {
 
-        public TokenInputConnection(InputConnection target, boolean mutable) {
+        TokenInputConnection(InputConnection target, boolean mutable) {
             super(target, mutable);
+        }
+
+        @Override
+        public boolean sendKeyEvent(KeyEvent event) {
+            return super.sendKeyEvent(event);
         }
 
         // This will fire if the soft keyboard delete key is pressed.
