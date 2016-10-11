@@ -32,7 +32,7 @@ public class ContactsCompletionView extends TokenCompleteTextView<InputModel> {
     protected View getViewForObject(InputModel inputModel) {
         LayoutInflater l = (LayoutInflater) getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
         TokenTextView token = (TokenTextView) l.inflate(R.layout.contact_token, (ViewGroup) getParent(), false);
-        token.setText(inputModel.getFormattedInput());
+        token.setText(inputModel.getInput());
         return token;
     }
 

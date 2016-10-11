@@ -6,7 +6,6 @@ import android.content.res.ColorStateList;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Build;
-import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -1344,83 +1343,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
 
         return serializables;
-    }
-
-    @SuppressWarnings("unchecked")
-    protected ArrayList<T> convertSerializableArrayToObjectArray(ArrayList<Serializable> s) {
-        return (ArrayList<T>) (ArrayList) s;
-    }
-
-    @Override
-    public Parcelable onSaveInstanceState() {
-        ArrayList<Serializable> baseObjects = getSerializableObjects();
-
-        //We don't want to save the listeners as part of the parent
-        //onSaveInstanceState, so remove them first
-        removeListeners();
-
-        //ARGH! Apparently, saving the parent state on 2.3 mutates the spannable
-        //prevent this mutation from triggering add or removes of token objects ~mgod
-        savingState = true;
-        Parcelable superState = super.onSaveInstanceState();
-        savingState = false;
-        com.tokenautocomplete.SavedState state = new com.tokenautocomplete.SavedState(superState);
-
-        state.prefix = prefix;
-        state.allowCollapse = allowCollapse;
-        state.allowDuplicates = allowDuplicates;
-        state.performBestGuess = performBestGuess;
-        state.tokenClickStyle = tokenClickStyle;
-        state.tokenDeleteStyle = deletionStyle;
-        state.baseObjects = baseObjects;
-        state.splitChar = splitChar;
-
-        //So, when the screen is locked or some other system event pauses execution,
-        //onSaveInstanceState gets called, but it won't restore state later because the
-        //activity is still in memory, so make sure we add the listeners again
-        //They should not be restored in onInstanceState if the app is actually killed
-        //as we removed them before the parent saved instance state, so our adding them in
-        //onRestoreInstanceState is good.
-        addListeners();
-
-        return state;
-    }
-
-    @Override
-    public void onRestoreInstanceState(Parcelable state) {
-        if (!(state instanceof com.tokenautocomplete.SavedState)) {
-            super.onRestoreInstanceState(state);
-            return;
-        }
-
-        com.tokenautocomplete.SavedState ss = (com.tokenautocomplete.SavedState) state;
-        super.onRestoreInstanceState(ss.getSuperState());
-
-        setText(ss.prefix);
-        prefix = ss.prefix;
-        updateHint();
-        allowCollapse = ss.allowCollapse;
-        allowDuplicates = ss.allowDuplicates;
-        performBestGuess = ss.performBestGuess;
-        tokenClickStyle = ss.tokenClickStyle;
-        deletionStyle = ss.tokenDeleteStyle;
-        splitChar = ss.splitChar;
-
-        addListeners();
-        for (T obj : convertSerializableArrayToObjectArray(ss.baseObjects)) {
-            addObject(obj);
-        }
-
-        // Collapse the view if necessary
-        if (!isFocused() && allowCollapse) {
-            post(new Runnable() {
-                @Override
-                public void run() {
-                    //Resize the view and display the +x if appropriate
-                    performCollapse(isFocused());
-                }
-            });
-        }
     }
 
     /**

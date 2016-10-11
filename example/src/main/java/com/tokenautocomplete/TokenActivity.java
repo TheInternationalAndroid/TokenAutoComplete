@@ -46,7 +46,6 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
                 InputModel inputWrapper = getItem(position);
                 if (inputWrapper != null) {
                     ((TextView) convertView.findViewById(R.id.name)).setText(inputWrapper.getInput());
-                    ((TextView) convertView.findViewById(R.id.email)).setText(inputWrapper.getFormattedInput());
                 }
 
                 return convertView;
@@ -66,9 +65,8 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
 
 
         if (savedInstanceState == null) {
-            completionView.setPrefix("To: ");
-            completionView.addObject(people[0]);
-            completionView.addObject(people[1]);
+//            completionView.addObject(people[0]);
+//            completionView.addObject(people[1]);
         }
 
         Button removeButton = (Button) findViewById(R.id.removeButton);
