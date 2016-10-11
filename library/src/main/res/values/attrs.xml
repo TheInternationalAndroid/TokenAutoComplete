@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="TokenTextView">
+        <attr name="tokenPaddingTop" format="dimension" />
+        <attr name="tokenPaddingBottom" format="dimension" />
+        <attr name="tokenPaddingLeft" format="dimension" />
+        <attr name="tokenPaddingRight" format="dimension" />
+        <attr name="tokenTextColor" format="color" />
+        <attr name="tokenMaxLines" format="integer" />
+        <attr name="tokenBackground" format="reference|color" />
+        <attr name="tokenEllipsize">
+            <enum name="none" value="0" />
+            <enum name="start" value="1" />
+            <enum name="middle" value="2" />
+            <enum name="end" value="3" />
+            <enum name="marquee" value="4" />
+        </attr>
+    </declare-styleable>
+
+    <declare-styleable name="TokenTextViewTheme">
+        <attr name="tokenStyle" format="reference" />
+    </declare-styleable>
+
+</resources>

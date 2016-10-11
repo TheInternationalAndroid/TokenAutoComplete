@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="TokeyStyle">
+        <item name="tokenBackground">#00FFFF</item>
+        <item name="tokenEllipsize">end</item>
+        <item name="tokenMaxLines">1</item>
+        <item name="tokenPaddingBottom">2dp</item>
+        <item name="tokenPaddingLeft">5dp</item>
+        <item name="tokenPaddingRight">5dp</item>
+        <item name="tokenPaddingTop">2dp</item>
+        <item name="tokenTextColor">#FF00FF</item>
+    </style>
+
+</resources>

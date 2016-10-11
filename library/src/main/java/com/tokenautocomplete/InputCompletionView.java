@@ -14,26 +14,26 @@ import android.view.ViewGroup;
  *
  * @author mgod
  */
-public class ContactsCompletionView extends TokenCompleteTextView<InputModel> {
+public class InputCompletionView extends TokenCompleteTextView<InputModel> {
 
-    public ContactsCompletionView(Context context) {
+    public InputCompletionView(Context context) {
         super(context);
     }
 
-    public ContactsCompletionView(Context context, AttributeSet attrs) {
+    public InputCompletionView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public ContactsCompletionView(Context context, AttributeSet attrs, int defStyle) {
+    public InputCompletionView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
 
     @Override
     protected View getViewForObject(InputModel inputModel) {
         LayoutInflater l = (LayoutInflater) getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-        TokenTextView token = (TokenTextView) l.inflate(R.layout.contact_token, (ViewGroup) getParent(), false);
-        token.setText(inputModel.getInput());
-        return token;
+        TokenTextView tokenTextView = (TokenTextView) l.inflate(R.layout.layout_test, (ViewGroup) getParent(), false);
+        tokenTextView.setText(inputModel.getInput());
+        return tokenTextView;
     }
 
     @Override

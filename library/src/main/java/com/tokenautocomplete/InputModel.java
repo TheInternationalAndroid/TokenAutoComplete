@@ -9,20 +9,20 @@ import java.io.Serializable;
  *
  * @author mgod
  */
-class InputModel implements Serializable {
+public class InputModel implements Serializable {
     private final String input;
     private final String formattedInput;
 
-    InputModel(String input, String formattedInput) {
+    public InputModel(String input, String formattedInput) {
         this.input = input;
         this.formattedInput = formattedInput;
     }
 
-    String getInput() {
+    public String getInput() {
         return input;
     }
 
-    String getFormattedInput() {
+    public String getFormattedInput() {
         return formattedInput;
     }
 

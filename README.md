@@ -313,7 +313,7 @@ If you need more detailed view customization like changing a picture in the toke
 
 ### Example custom view
 
-In a view implementation (see ```com.tokenautocomplete.TokenTextView```):
+In a view implementation (see ```com.tokenautocomplete.sample.TokenTextView```):
 ```java
 public class TokenTextView extends TextView {
 
@@ -329,7 +329,7 @@ public class TokenTextView extends TextView {
 
 contact_token.xml
 ```xml
-<com.tokenautocomplete.TokenTextView
+<com.tokenautocomplete.sample.TokenTextView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/name"
