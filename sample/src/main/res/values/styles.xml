@@ -6,12 +6,12 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
-        <item name="tokenStyle">@style/TokeyStyle.CustomTokenStyle</item>
+        <item name="tokenStyle">@style/TokenStyle.CustomTokenStyle</item>
     </style>
 
-    <style name="TokeyStyle.CustomTokenStyle">
-        <item name="tokenBackground">@drawable/token_background</item>
-        <item name="tokenTextColor">#00FF00</item>
+    <style name="TokenStyle.CustomTokenStyle">
+        <item name="android:background">@drawable/token_background</item>
+        <item name="android:textColor">#00FF00</item>
     </style>
 
 </resources>
