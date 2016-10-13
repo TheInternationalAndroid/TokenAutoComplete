@@ -1,18 +1,42 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
+apply plugin: "com.jfrog.artifactory"
+
 buildscript {
     repositories {
         mavenCentral()
         jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven {
+            url "${artifactory_context_url}libs-release-local"
+            credentials {
+                username = artifactory_username
+                password = artifactory_password
+            }
+        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.2.1'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.7"
     }
 }
 
+//
 allprojects {
     repositories {
         mavenCentral()
         jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven {
+            url "${artifactory_context_url}libs-release-local"
+            credentials {
+                username = artifactory_username
+                password = artifactory_password
+            }
+        }
     }
 }

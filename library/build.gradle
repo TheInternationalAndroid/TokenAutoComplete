@@ -1,4 +1,6 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.artifactory'
+apply plugin: 'maven-publish'
 
 android {
     compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
@@ -22,15 +24,46 @@ android {
     }
 }
 
-//task jar(type: Jar) {
-//    dependsOn assembleRelease
-//    baseName project.POM_ARTIFACT_ID
-//    version project.VERSION_NAME
-//    from fileTree(dir: 'build/intermediates/classes/release/')
-//}
-
 dependencies {
-    compile 'com.android.support:support-annotations:23.1.1'
+    compile 'com.android.support:support-annotations:24.2.1'
 }
 
-apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+//apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+
+
+def libraryGroupId = 'com.tokenautocomplete'
+def libraryArtifactId = 'tokenview'
+def isRelease = true
+def libraryVersion = '1.0.0'
+
+publishing {
+    publications {
+        aar(MavenPublication) {
+            groupId libraryGroupId
+            version libraryVersion + (isRelease ? '' : artifactory_snapshot_suffix)
+            artifactId libraryArtifactId
+            artifact("$buildDir/outputs/aar/library-release.aar")
+        }
+    }
+}
+
+artifactory {
+    contextUrl = artifactory_context_url
+    publish {
+        repository {
+            repoKey = (isRelease ? artifactory_repo_key_release : artifactory_repo_key_snapshot)
+            username = artifactory_username
+            password = artifactory_password
+        }
+        defaults {
+            publications('aar')
+            publishArtifacts = true
+
+            properties = ['qa.level': 'basic', 'q.os': 'android', 'dev.team': 'core']
+            publishPom = true
+            publishBuildInfo = true
+            publishArtifacts = true
+            publishIvy = true
+        }
+    }
+}
