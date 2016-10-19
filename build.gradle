@@ -10,10 +10,10 @@ buildscript {
             url "https://plugins.gradle.org/m2/"
         }
         maven {
-            url "${artifactory_context_url}libs-release-local"
+            url "${istuary_artifactory_context_url}libs-release-local"
             credentials {
-                username = artifactory_username
-                password = artifactory_password
+                username = istuary_artifactory_username
+                password = istuary_artifactory_password
             }
         }
     }
@@ -32,10 +32,10 @@ allprojects {
             url "https://plugins.gradle.org/m2/"
         }
         maven {
-            url "${artifactory_context_url}libs-release-local"
+            url "${istuary_artifactory_context_url}libs-release-local"
             credentials {
-                username = artifactory_username
-                password = artifactory_password
+                username = istuary_artifactory_username
+                password = istuary_artifactory_password
             }
         }
     }

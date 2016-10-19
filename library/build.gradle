@@ -48,12 +48,12 @@ publishing {
 }
 
 artifactory {
-    contextUrl = artifactory_context_url
+    contextUrl = istuary_artifactory_context_url
     publish {
         repository {
             repoKey = (isRelease ? artifactory_repo_key_release : artifactory_repo_key_snapshot)
-            username = artifactory_username
-            password = artifactory_password
+            username = istuary_artifactory_username
+            password = istuary_artifactory_password
         }
         defaults {
             publications('aar')
