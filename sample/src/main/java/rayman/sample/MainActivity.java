@@ -11,18 +11,16 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.tokenautocomplete.FilteredArrayAdapter;
 import com.tokenautocomplete.InputCompletionView;
+import com.tokenautocomplete.InputFilterAdapter;
 import com.tokenautocomplete.InputModel;
 import com.tokenautocomplete.TokenCompleteTextView;
 
-public class MainActivity extends AppCompatActivity implements TokenCompleteTextView.TokenListener<InputModel> {
+public class MainActivity extends AppCompatActivity implements InputCompletionView.InputTokenListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
         setContentView(R.layout.activity_main);
 
         InputModel[] inputModels = new InputModel[]{
@@ -36,11 +34,10 @@ public class MainActivity extends AppCompatActivity implements TokenCompleteText
                         "siniša_damianos_pilirani_karoline_slootmaekers")
         };
 
-        ArrayAdapter<InputModel> adapter = new FilteredArrayAdapter<InputModel>(this, R.layout.list_cell_filter_layout, inputModels) {
+        ArrayAdapter<InputModel> adapter = new InputFilterAdapter(this, R.layout.list_cell_filter_layout, inputModels) {
             @Override
             public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                 if (convertView == null) {
-
                     LayoutInflater l = (LayoutInflater) getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
                     convertView = l.inflate(R.layout.list_cell_filter_layout, parent, false);
                 }
@@ -49,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements TokenCompleteText
                 if (inputWrapper != null) {
                     ((TextView) convertView.findViewById(R.id.name)).setText(inputWrapper.getInput());
                 }
-
                 return convertView;
             }
 
@@ -64,7 +60,6 @@ public class MainActivity extends AppCompatActivity implements TokenCompleteText
         completionView.setAdapter(adapter);
         completionView.setTokenListener(this);
         completionView.setTokenClickStyle(TokenCompleteTextView.TokenClickStyle.Select);
-
     }
 
     @Override

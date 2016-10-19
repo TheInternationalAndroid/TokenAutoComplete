@@ -18,14 +18,17 @@ public class InputCompletionView extends TokenCompleteTextView<InputModel> {
 
     public InputCompletionView(Context context) {
         super(context);
+        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     public InputCompletionView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     public InputCompletionView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     @Override
@@ -40,4 +43,11 @@ public class InputCompletionView extends TokenCompleteTextView<InputModel> {
     protected InputModel defaultObject(String completionText) {
         return new InputModel(completionText, completionText);
     }
+
+    public interface InputTokenListener extends TokenListener<InputModel> {
+        void onTokenAdded(InputModel var1);
+
+        void onTokenRemoved(InputModel var1);
+    }
+
 }

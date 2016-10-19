@@ -17,60 +17,79 @@ import java.util.List;
  * FilteredArrayAdapter</a> by Tobias Schürg
  * <p>
  * Created on 9/17/13.
+ *
  * @author mgod
  */
 
 abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
 
-    private List<T> originalObjects;
+    private List<T> originalObjects = new ArrayList<>();
     private Filter filter;
 
     /**
      * Constructor
      *
-     * @param context The current context.
+     * @param context  The current context.
      * @param resource The resource ID for a layout file containing a TextView to use when
      *                 instantiating views.
-     * @param objects The objects to represent in the ListView.
+     * @param objects  The objects to represent in the ListView.
      */
     public FilteredArrayAdapter(Context context, int resource, T[] objects) {
         this(context, resource, 0, objects);
+        if (objects.length > 0)
+            for (T t : objects) {
+                originalObjects.add(t);
+            }
     }
 
     /**
      * Constructor
      *
-     * @param context The current context.
-     * @param resource The resource ID for a layout file containing a layout to use when
-     *                 instantiating views.
+     * @param context            The current context.
+     * @param resource           The resource ID for a layout file containing a layout to use when
+     *                           instantiating views.
      * @param textViewResourceId The id of the TextView within the layout resource to be populated
-     * @param objects The objects to represent in the ListView.
+     * @param objects            The objects to represent in the ListView.
      */
     public FilteredArrayAdapter(Context context, int resource, int textViewResourceId, T[] objects) {
-        this(context, resource, textViewResourceId, new ArrayList<T>(Arrays.asList(objects)));
+        this(context, resource, textViewResourceId, new ArrayList<>(Arrays.asList(objects)));
+        if (objects.length > 0)
+            for (T t : objects) {
+                originalObjects.add(t);
+            }
     }
 
     /**
      * Constructor
      *
-     * @param context The current context.
+     * @param context  The current context.
      * @param resource The resource ID for a layout file containing a TextView to use when
      *                 instantiating views.
-     * @param objects The objects to represent in the ListView.
+     * @param objects  The objects to represent in the ListView.
      */
     @SuppressWarnings("unused")
     public FilteredArrayAdapter(Context context, int resource, List<T> objects) {
         this(context, resource, 0, objects);
+        originalObjects = objects;
+    }
+
+    public void setDataList(List<T> list) {
+        if (list == null) {
+            originalObjects.clear();
+        } else {
+            originalObjects = list;
+        }
+        notifyDataSetChanged();
     }
 
     /**
      * Constructor
      *
-     * @param context The current context.
-     * @param resource The resource ID for a layout file containing a layout to use when
-     *                 instantiating views.
+     * @param context            The current context.
+     * @param resource           The resource ID for a layout file containing a layout to use when
+     *                           instantiating views.
      * @param textViewResourceId The id of the TextView within the layout resource to be populated
-     * @param objects The objects to represent in the ListView.
+     * @param objects            The objects to represent in the ListView.
      */
     public FilteredArrayAdapter(Context context, int resource, int textViewResourceId, List<T> objects) {
         super(context, resource, textViewResourceId, new ArrayList<T>(objects));
@@ -80,14 +99,14 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
     @SuppressWarnings("unchecked")
     @Override
     public void notifyDataSetChanged() {
-        ((AppFilter)getFilter()).setSourceObjects(this.originalObjects);
+        ((AppFilter) getFilter()).setSourceObjects(this.originalObjects);
         super.notifyDataSetChanged();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void notifyDataSetInvalidated(){
-        ((AppFilter)getFilter()).setSourceObjects(this.originalObjects);
+    public void notifyDataSetInvalidated() {
+        ((AppFilter) getFilter()).setSourceObjects(this.originalObjects);
         super.notifyDataSetInvalidated();
     }
 
@@ -101,7 +120,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
     /**
      * Filter method used by the adapter. Return true if the object should remain in the list
      *
-     * @param obj object we are checking for inclusion in the adapter
+     * @param obj  object we are checking for inclusion in the adapter
      * @param mask current text in the edit text we are completing against
      * @return true if we should keep the item in the adapter
      */
@@ -109,10 +128,10 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
 
     /**
      * Class for filtering Adapter, relies on keepObject in FilteredArrayAdapter
-     *
+     * <p>
      * based on gist by Tobias Schürg
      * in turn inspired by inspired by Alxandr
-     *         (http://stackoverflow.com/a/2726348/570168)
+     * (http://stackoverflow.com/a/2726348/570168)
      */
     private class AppFilter extends Filter {
 
@@ -154,7 +173,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
         protected void publishResults(CharSequence constraint, FilterResults results) {
             clear();
             if (results.count > 0) {
-                FilteredArrayAdapter.this.addAll((Collection)results.values);
+                FilteredArrayAdapter.this.addAll((Collection) results.values);
                 notifyDataSetChanged();
             } else {
                 notifyDataSetInvalidated();
