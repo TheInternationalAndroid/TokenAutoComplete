@@ -34,7 +34,7 @@ dependencies {
 def libraryGroupId = 'com.tokenautocomplete'
 def libraryArtifactId = 'tokenview'
 def isRelease = true
-def libraryVersion = '1.0.2'
+def libraryVersion = '1.0.3'
 
 publishing {
     publications {
